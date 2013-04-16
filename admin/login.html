@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Login to Backlift App</title>
+
+    <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.2.1/css/bootstrap.min.css" rel="stylesheet">  
+
+    <style>
+    	body {
+    		background: url('images/graphpaper.jpg');
+    	}
+    	.wrapper {
+    		width: 300px;
+    		margin: 175px auto 0 auto;
+        position: relative;
+    	}
+    	.wrapper img {
+    		margin-left: -400px;
+        margin-top: -450px;
+        max-width: none;
+        position: absolute;
+        z-index: -1;
+    	}
+    	form {
+        padding: 20px;
+    		background: #fff;
+    		border: 1px solid #ddd;
+    		border-radius: 5px;
+        box-shadow: 0px 1px 3px 1px #ddd;
+    	}
+
+      h1 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .input-block-level {
+        margin-bottom: 20px !important;
+      }
+
+      label {
+        font-size: 0.9em !important;
+      }
+
+    </style>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.2.1/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-url-parser/2.2.1/purl.min.js"></script>
+    <script type="text/javascript">
+      
+      function getRootDomain(){
+        var parts = window.location.href.match(/^https?:\/\/(\w+-\w+)\.(\S+?\....).*$/);
+        var found = parts.length === 3;
+        var appid = found && parts[1];
+        var rootdomain = found && parts[2].replace(/app/gi, "");
+        return rootdomain
+      }
+
+      $('document').ready(function(){
+
+        newaction = $('form').attr('action')+'?_next='+$.url().param('_next');
+        $('form').attr('action', newaction);
+
+        app_id = $.url().attr('host').split('.')[0];
+        singlesignon_url = '/backlift/singlesignon/'+app_id
+        dplogin_url = '//'+getRootDomain()+'/backlift/auth/oauth_login/dropbox?_next='+singlesignon_url
+        $('a#dropboxlogin').attr('href', dplogin_url)
+
+
+      })
+
+    </script>
+
+  </head>
+  <body>
+  	<div class="wrapper">
+  		<img src="images/tric-draw.png" />
+  		
+      <h1>Log In</h1>
+  		<form action="/backlift/auth/login" method="POST">
+  			<label for="email">Email:</label>
+  			<input type="email" class="input-block-level" name="email" placeholder="Email" />
+  			<label for="password">Password:</label>
+  			<input type="password" class="input-block-level" name="password" placeholder="Password" />
+  			<input type="submit" class="btn btn-primary" value="Log in" /> <span class="help-inline"> or <a id="dropboxlogin" href="#">Login with Backlift.com</a></span>
+  		</form>
+      <p>
+        <a href="/" class="pull-left muted">Back to the site</a>
+      </p>
+  		
+  	</div>
+  </body>
+</html>

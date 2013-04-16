@@ -1,0 +1,77 @@
+# -------------------------------------------------------------------
+# Backlift config.yml file. These settings control various javascript
+# and css compilers, file directory listings, data prefetching, 
+# optimization, oauth keys, and other server functions
+# -------------------------------------------------------------------
+
+
+# compile: Backlift will select an appropriate compiler for each file 
+# that matches one of the patterns below. A '*' will match any string 
+# and '**' will match any folder. The compiler will be selected based 
+# on the extension of the matched file. The compiled file will be
+# placed in the same folder as the original file. The extensions that 
+# backlift recognizes are:
+#   .coffee     -> coffeescript compiler (outputs .js files)
+#   .less       -> lessc css compiler (outputs .css files)
+#   .jst        -> underscore templates (outputs .js files)
+#   .handlebars -> handlebars templates (outputs .js files)
+#
+# The following block is the default. Uncomment it to customize.
+
+# compile:
+# - /**/*.jst
+# - /**/*.handlebars
+# - /**/bootstrap*.less
+# - /**/*.coffee
+
+
+# scripts: An ordered list of javascript file patterns. Used to create 
+# a corresponding list of <script src="*"> tags. To render the result, 
+# place the {{$ scripts }} template variable at the bottom of your html
+# files. A '*' will match any string and '**' will match any folder.
+
+scripts:
+- libraries/scripts/backlift-reloader.js
+- libraries/scripts/jquery.js
+- libraries/scripts/underscore.js
+- libraries/scripts/*.js
+- app/**/*.js
+
+
+# styles: An ordered list of stylesheet file patterns. Used to create 
+# a list of <link type="text/css" rel="stylesheet" href="*"> tags. Use 
+# the {{$ styles }} template variable to render the result.
+
+styles:
+- libraries/styles/bootstrap.css
+- app/**/*.css
+
+
+# optimize: The optimize flag controls whether or not backlift 
+# concatenates and minifies .js and .css files. The optimizer is 
+# slow and produces obfuscated code that cannot be easily debugged. 
+# For these reasons, optimization should be disabled while developing.
+
+optimize: no
+
+
+# autoroute: the automatic routing feature is useful for single-page 
+# websites that implement their own javascript routing. If autoroute
+# is set to 'yes', all requests to URLs that don't match a file or API 
+# endpoint will be routed to the index.html file.
+
+autoroute: no
+
+
+# includes: Files and folders to be included when app is installed.
+# Each key is a folder name, and each value is a github repository
+# or gist. Github repos may specify a tag or branch via a tree url.
+
+include:
+  admin: 
+  - github.com/backlift/backlift-admin
+  libraries: 
+  - github.com/backlift/jquery-bundle/tree/20130406
+  - github.com/backlift/bootstrap-bundle/tree/20130406
+  libraries/scripts: 
+  - gist.github.com/backlift/5325013 # backlift-reloader.js

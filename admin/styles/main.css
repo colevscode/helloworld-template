@@ -1,0 +1,58 @@
+#content {
+      margin-top: 25px;
+}
+
+table, pre, h1, .row {
+  margin-bottom: 20px;
+}
+
+.container {
+  margin-top: 20px;
+}
+
+pre {
+  background-color: #EEF;
+  border: 1px solid #CDD;
+}
+pre.build-err {
+  background-color: white;
+  -webkit-border-radius: 0px;
+  -moz-border-radius: 0px;
+  border-radius: 0px;
+  border: none;
+  border-top: 1px solid #dddddd;
+  border-bottom: 1px solid #dddddd;
+  background-color: #FFF5FA;
+}
+
+#filterfields {
+  display: inline;
+}
+
+.hidden {
+  display: none;
+}
+
+#filterfields.hidden {
+  display: none;
+}
+
+.tablesorter-header-inner {
+  cursor: pointer;
+}
+
+.modal form {
+  margin-bottom: 0px;
+}
+
+.well form.form-inline {
+  margin-bottom: 0px;
+}
+
+.codetext {
+  font-family: Courier;
+}
+
+a {
+  cursor: pointer;
+}

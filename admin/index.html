@@ -1,0 +1,510 @@
+<!doctype html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"> <!--<![endif]-->
+<head>
+
+  <!-- Basic Page Needs
+  ================================================== -->
+  <meta charset="utf-8">
+  <title>Backlift app admin site</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
+
+  <!-- Mobile Specific Metas
+  ================================================== -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <!-- CSS
+  ================================================== -->
+  <!-- Le styles -->  
+  
+<!--   <link href="bootstrap.css" rel="stylesheet">  
+  <link href="prettify.css" type="text/css" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css">
+ -->
+
+
+  <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.2.1/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/admin/styles/main.css" rel="stylesheet" type="text/css">
+    
+  <!-- Scripts
+  ================================================== -->
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.10.0/jquery.validate.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.10/backbone-min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.2.1/bootstrap.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.5.2/jquery.tablesorter.min.js"></script>
+  <script>
+    // setup namespace, preload some data from server
+    var App = {}
+    
+    App.current_user = [{{$ get /backlift/auth/currentuser/}}];
+    App.current_user = App.current_user.length==1 ? App.current_user[0] : false
+    
+    App.adminData = [{{$ get /backlift/admin/currentapp/}}];
+    App.adminData = App.adminData.length==1 ? App.adminData[0] : false
+    
+    App.appUsers = [{{$ get /backlift/users }}];
+    App.appUsers = App.appUsers.length==1 ? App.appUsers[0] : false
+
+  </script>
+
+</head>
+
+<!-- hide all content before auth has been verified -->
+<body class="hidden">
+
+  <div class="full-width" id="section-middle"> 
+      <div class="container">
+          <div class="pull-right">
+            <strong><span id="app-username">Loading...</span></strong> &nbsp; <a href="/backlift/auth/logout"><button class="btn">logout</button></a>
+          </div>
+          <h1 class="page-header">Admin for <span id="app-appname">Loading...</span></h1>
+          <div id="mainnav">
+            <ul class="nav nav-tabs">
+              <li id="nav-dashboard"><a href="#dashboard">Dashboard</a></li>
+              <li id="nav-history"><a href="#history">History</a></li>
+              <!--<li id="nav-errors"><a href="#errors">Errors</a></li>-->
+              <li id="nav-databrowser"><a href="#databrowser">Data Browser</a></li>
+              <li id="nav-users"><a href="#users">Users</a></li>
+            </ul>
+          </div>
+          <div id="content">
+            Loading...
+          </div>
+      </div>
+    </div> 
+
+  <script type="text/template" id="databrowser-view">
+    <div class="row">
+      <div class="span4">
+        <div id="subnav"></div>
+
+        <p class="muted" style="margin-top: 10px;"><a class="muted import-data" href="#importdata" data-toggle="modal">Import</a> | <a href="/backlift/data" target="_blank" class="muted">Export</a></p>
+      </div>
+
+      <!-- Modal -->
+            <div id="importdata" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                <h3>Import collections</h3>
+              </div>
+              <div class="modal-body">
+                <p>Choose a JSON-file, or write the content you want to import. <a data-toggle="collapse" data-target="#importinfo">Show more</a></p>
+                <div id="importinfo" class="collapse">
+                  <p>Data being imported should look similar to what is exported, or otherwise problems will occur. Basically, data should have <em>collection names as keys</em>, that have <em>dicts of models as values</em>. For example:</p> 
+                  <% exampledata = {"collection_name": [{"model_key":"model_value"}, {"another_model":"value"}], "another_collection": [{"modelkey":"value"}]} %>
+                  <textarea class="input-block-level codetext" rows="8"><%= JSON.stringify(exampledata,null,' ') %></textarea>
+                </div>
+                <input type="file" id="importfile" name="files" />
+                
+                <label id="filewarning" class="hidden">File is very big, <a id="showpreview">load preview</a></label>
+                
+                <div class="control-group" style="margin-top: 15px;">  
+                  <textarea rows="10" class="input-block-level codetext" name="data" id="importcontent" placeholder="Type in JSON"></textarea>
+                  <label id="jsonerror" class="control-label error"></label>
+                </div>
+
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="importbutton" data-loading-text="Importing">Import</button>
+              </div>
+            </div>
+
+      <div class="span8" id="subcontent">
+        <p>Choose collection from the left</p>
+      </div>
+
+    </div>
+  </script>
+
+  <script type="text/template" id="databrowser-nav">
+    <ul class="nav nav-list well">
+          <li class="nav-header">Collections</li>
+            <% _.each(params, function(item){ %>
+              <li <%= '#databrowser/'+item.name==window.location.hash ? 'class="active"' : '' %> >
+                <a href="<%= '#databrowser/'+item.name %>"><%= item.name %> (<%= item.size %>)</a>
+              </li>
+              <% }) %>
+            <li class="divider"></li>
+            <form id="addnewcollection" style="margin-bottom: 0;">
+              <div class="control-group" style="margin-bottom: 0;">
+                <input class="input-block-level" type="text" name="name" placeholder="Add new collection" />
+                <label class="control-label"></label>
+                <button type="submit" class="btn hidden" id="addnewbutton" data-loading-text="Adding...">Add new</button>
+              </div>
+            </form>
+
+            <!--<button class="btn" value="Add new collection" href="#addnewcollection" data-toggle="modal">Add New Collection</button>-->
+        </ul>
+
+        <!-- Modal --><!--
+            <div id="addnewcollection" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
+            <form>
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                <h3>Add new collection</h3>
+              </div>
+              <div class="modal-body">
+                <div class="control-group">
+                  <label class="control-label"></label>
+                  <input type="text" class="input-block-level codetext" placeholder="Collection Name" name="name" />
+                </div>
+                <div class="control-group">
+                  <p>Type in JSON-document to be inserted into collection:</p>
+                  <label class="control-label"></label>
+                  <textarea rows="10" placeholder="Document content in JSON" class="input-block-level codetext" name="data"></textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="addnewbutton" data-loading-text="Adding...">Add new</button>
+              </div>
+              </form>
+            </div>-->
+
+  </script>
+
+  <script type="text/template" id="databrowser-col">
+    <div style="float: left; width: 100%;">
+      <div id="actions" class="span6" style="margin-left: 0; margin-right: 0;"></div>
+
+      <button href="#addnewdocument" role="button" class="btn btn-primary pull-right" data-toggle="modal">Add New Entry</button>
+
+    </div>
+    <div id="itemlist" style="float: left; width: 100%;"></div>
+
+
+    <!-- Modal -->
+    <div id="addnewdocument" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <form>
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3>Add new document</h3>
+      </div>
+      <div class="modal-body">
+        <div class="control-group" id="newdoc-group">
+          <p>Type in JSON-document to be inserted into collection:</p>
+          <label class="control-label"></label>
+          <textarea  rows="10" placeholder="Document content in JSON" class="input-block-level codetext" name="data"><%= formplaceholder %></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="addnewdocument-submit" data-loading-text="Adding...">Add new</button>
+      </div>
+      </form>
+    </div>
+
+  </script>
+
+  <script type="text/template" id="dataitem-view">
+    <div style="padding: 10px; margin-bottom: 10px; position: relative" class="item well">
+
+      <p><small><%= new Date(params['_created']) %></small></p>
+
+      <a data-id="<%= params._id %>" class="del" style="position: absolute; top: 5px; right: 5px;">Delete</a>
+      <% hidefields = ['_id', 'id', '_owner', '_modified', '_created']; %>
+      <% _.each(Object.keys(params), function(key){ %>
+        <% if($.inArray(key, hidefields)<0) { %>
+          <p><strong><%= key %>: </strong><%= params[key] %> </p>
+        <% } %>
+      <% }) %>
+        
+      <a data-toggle="collapse" data-target="#extra-<%=params['_id']%>">Extra</a>
+      <div id="extra-<%=params['_id']%>" class="collapse">
+        <% _.each(Object.keys(params), function(key){ %>
+          <% if($.inArray(key, hidefields)>-1) { %>
+            <p><strong><%= key %>: </strong><%= params[key] %> </p>
+          <% } %>
+        <% }) %>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/template" id="filter-view">
+    <form class="form-inline">
+      <select id="filter-key" class="span2">
+        <!-- filled programmatically -->
+      </select>
+      <div class="hidden" id="filterfields">
+      <select id="filter-type" class="span1">
+        <% _.each(Object.keys(filters),function(key){ %>
+          <option value="<%= key %>"><%=filters[key]['sym']%></option>
+        <% }) %>
+      </select>
+      <input type="text" id="filter-value" placeholder="value" class="span2" />
+      <button type="submit" class="btn" value="filter" id="filter-submit">Filter</button>
+      </div>
+    </form>
+  </script>
+
+  <script type="text/template" id="history-view">
+    <div class="well">
+      <form id="history-filter" class="form-inline">
+        <select id="history-timerange">
+          <option value="1">Last 1 hour</option>
+          <option value="12">Last 12 hours</option>
+          <option value="24">Last 24 hours</option>
+          <option value="48">Last 48 hours</option>
+          <option value="0">All</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Filter</button>
+      </form>
+    </div>
+    <div id="tableview"></div>
+  </script>
+
+
+  <script type="text/template" id="history-tableview">
+    <table class="table table-condensed">
+      <th width="130px">Date/Time</th><th>Method</th><th>URL</th><th>Data</th>
+        <% if (params.length>0) { %>
+          <% for (var i=params.length-1; i>=0; i--) { %>
+            <% var tokens = params[i].split(' ');
+              function merge(s, f) {
+                var range = new Array(); 
+                for (var j=s; j<tokens.length && j<f; j++) { 
+                  range[j-s] = tokens[j];
+                } 
+                return range.join(' ');
+              } %>
+              <tr>
+                <td><%= merge(0,3) %></td>
+                <td><%= tokens[3] %></td>
+                <% if (tokens[3]=='DELETE' && false) { %> 
+                  <td colspan=2 ><%= tokens[4] %></td>
+                <% } else { %> 
+                  <td><%= tokens[4] %></td>
+                  <td><%= merge(5,999) %></td>
+                <% } %>
+              </tr>
+            <% } %>
+          <% } else { %>
+            <tr><td colspan=4>No events have been added to the history yet.</tr></td>
+          <% } %>
+    </table>
+  </script>
+
+  <script type="text/template" id="userlist-view">
+    <div class="well">
+      <form id="userfilter" class="form-inline" style="display: inline;">
+        <select name="filter-key" id="filter-key" class="span2">
+          <option value="nofilter">no filter</option>
+          <option value="username">username</option>
+          <option value="email">email</option>
+          <option value="isadmin">is admin</option>
+        </select>
+        <div id="filterfields" class="hidden">
+          <select name="filter-type" id="filter-type" class="span1">
+            <option value="equal">is</option>
+            <option value="isnot">is not</option>
+            <option value="contains">contains</option>
+            <option value="notcontain">not contains</option>
+          </select>
+          <input name="filter-value" type="text" placeholder="Filter" id="filter-value" class="span2" />
+
+          <button type="submit" id="triggerfilter" class="btn" value="Filter">Filter</button>
+        </div>
+      </form>
+      <button class="btn btn-primary pull-right" value="Create new user" href="#addnewuser" data-toggle="modal">Create new user</button>
+    </div>
+
+    <table class="table table-condensed">
+    <thead>
+      <th style="width: 150px;">Created</th>
+      <th style="width: 200px;">Username</th>
+      <th>Email</th>
+      <th>Is Admin?</th>
+      <th></th>
+    </thead>
+      <tbody id="userlist"></tbody>
+    </table>
+
+    <!-- Modal -->
+    <div id="addnewuser" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
+      <form>
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3>Add new user</h3>
+      </div>
+      <div class="modal-body">
+
+          <p>Username</p>
+          <div class="control-group">
+              <label class="control-label"></label>
+              <input name="username" class="input-block-level username" type="text" placeholder="Username" />
+          </div>
+            
+          <p>Email:</p>
+          <div class="control-group" >
+            <label class="control-label"></label>
+            <input class="input-block-level email" type="text" name="email" placeholder="Email" />
+          </div>
+
+          <p>Password</p>
+          <div class="control-group">
+            <label class="control-label"></label>
+            <input class="input-block-level" type="password" name="password" id="newuserpassword" placeholder="Password" />
+          </div>
+          <label class="checkbox">
+                <input onclick="$('#newuserpassword')[0].type = $(this).is(':checked')? 'text' : 'password';" type="checkbox"> Show password
+              </label>
+
+          <label class="checkbox">
+            <input type="checkbox" name="isadmin"> Is administrator
+          </label>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="createnewuser" data-loading-text="Adding...">Add new</button>
+      </div>
+      </form>
+    </div>
+
+  </script>
+
+  <script type="text/template" id="useritem-view">
+      <td><%= new Date(user['_created']) %></td>
+      <td><%= user.username %></td>
+      <td><%= user.email %></td>
+      <td><%= isAdmin %></td>
+      <td><a class="pull-right" id="openmodal" href="#edituser-<%= user._id %>" data-toggle="modal">Edit</a></th>
+
+    <!-- Modal -->
+    <div id="edituser-<%= user._id %>" class="modal hide fade edituser" tabindex="-1" role="dialog" aria-hidden="true">
+      <form>
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3>Edit user <%= user.username %></h3>
+      </div>
+      <div class="modal-body">
+            <p>Username:</p>
+            <div class="control-group">
+              <label class="control-label"></label>
+              <input class="input-block-level" name="username" type="text" value="<%= user.username %>" />
+            </div>
+            
+            <p>Email:</p>
+            <div class="control-group" >
+              <label class="control-label"></label>
+              <input class="input-block-level" name="email" type="text" value="<%= user.email %>" />
+            </div>
+
+            <label class="checkbox">
+              <input name="isadmin" type="checkbox" <%= isAdmin ? 'checked' : '' %>> Administrator
+            </label>
+            <a data-toggle="collapse" data-target="#extra-<%= user._id %>">Details</a>
+            <div id="extra-<%= user._id %>" class="collapse">
+              <textarea class="input-block-level disabled codetext" disabled="disabled" rows="5"><%= JSON.stringify(user, null, ' ') %></textarea>
+            </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="del btn pull-left" aria-hidden="true">Delete</button>
+        <button type="button" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="doedit" data-loading-text="Updating...">Update</button>
+      </div>
+      </form>
+    </div>
+
+  </script>
+
+  <script type="text/template" id="dashboard-template">
+    <div class="row">
+      <div class="span8">
+        <h2>History:</h2>
+        <table class="table table-condensed">
+          <th width="130px">Date/Time</th><th>Method</th><th>URL</th><th>Data</th>
+          <% if ('_history' in model) { %>
+            <% modelcount = Math.max(model._history.length-10, 0) %>
+            <% for (var i=model._history.length-1; i>=modelcount; i--) { %>
+              <% var tokens = model._history[i].split(' ');
+                function merge(s, f) {
+                   var range = new Array(); 
+                   for (var j=s; j<tokens.length && j<f; j++) { 
+                      range[j-s] = tokens[j];
+                   } 
+                   return range.join(' ');
+                } %>
+              <tr>
+                <td><%= merge(0,3) %></td>
+                <td><%= tokens[3] %></td>
+                <% if (tokens[3]=='DELETE' && false) { %> 
+                  <td colspan=2 ><%= tokens[4] %></td>
+                <% } else { %> 
+                  <td><%= tokens[4] %></td>
+                  <td><%= merge(5,999) %></td>
+                <% } %>
+              </tr>
+            <% } %>
+          <% } else { %>
+            <tr><td colspan=4>No events have been added to the history yet.</tr></td>
+          <% } %>
+        </table>
+
+          <h2>Build Errors:</h2>
+          <% _.each(_.reduceRight(model._build_errors, function(list, err) { 
+                        return list.concat(err);
+                    }, []), function(err) { %>
+            <p> on <%= new Date(err.dt).toString() %>
+              <pre class="build-err"><%= err.msg %></pre>
+            </p>
+          <% }); %>
+
+        </div>
+        <div class="span4">
+          <h2>Files:</h2>
+          <pre><% for (var i=0; i<model._files.length; i++) { %><%= model._files.sort()[i] %>
+<% } %></pre>
+          <h2>Miscellaneous:</h2>
+          <% if(model._created){ %>
+            <pre>created on: <%= model._created.split(' ')[0] %></pre>
+          <% } %>
+        </div>
+      </div>
+  </script>
+
+  <!-- load scripts -->
+  <script src="/admin/scripts/helpers.js"></script>
+
+  <script src="/admin/scripts/dashboard.js"></script>
+  <script src="/admin/scripts/users.js"></script>
+  <script src="/admin/scripts/databrowser.js"></script>
+  <script src="/admin/scripts/history.js"></script>
+  
+  <script src="/admin/scripts/router.js"></script>
+  <script src="/admin/scripts/admin.js"></script>
+
+
+  <script type="text/javascript">
+
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-30341755-1']);
+    _gaq.push(['_setDomainName', 'backlift.com']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+
+  </script>
+
+<!-- begin olark code --><script data-cfasync="false" type='text/javascript'>/*{literal}<![CDATA[*/
+window.olark||(function(c){var f=window,d=document,l=f.location.protocol=="https:"?"https:":"http:",z=c.name,r="load";var nt=function(){f[z]=function(){(a.s=a.s||[]).push(arguments)};var a=f[z]._={},q=c.methods.length;while(q--){(function(n){f[z][n]=function(){f[z]("call",n,arguments)}})(c.methods[q])}a.l=c.loader;a.i=nt;a.p={0:+new Date};a.P=function(u){a.p[u]=new Date-a.p[0]};function s(){a.P(r);f[z](r)}f.addEventListener?f.addEventListener(r,s,false):f.attachEvent("on"+r,s);var ld=function(){function p(hd){hd="head";return["<",hd,"></",hd,"><",i,' onl' + 'oad="var d=',g,";d.getElementsByTagName('head')[0].",j,"(d.",h,"('script')).",k,"='",l,"//",a.l,"'",'"',"></",i,">"].join("")}var i="body",m=d[i];if(!m){return setTimeout(ld,100)}a.P(1);var j="appendChild",h="createElement",k="src",n=d[h]("div"),v=n[j](d[h](z)),b=d[h]("iframe"),g="document",e="domain",o;n.style.display="none";m.insertBefore(n,m.firstChild).id=z;b.frameBorder="0";b.id=z+"-loader";if(/MSIE[ ]+6/.test(navigator.userAgent)){b.src="javascript:false"}b.allowTransparency="true";v[j](b);try{b.contentWindow[g].open()}catch(w){c[e]=d[e];o="javascript:var d="+g+".open();d.domain='"+d.domain+"';";b[k]=o+"void(0);"}try{var t=b.contentWindow[g];t.write(p());t.close()}catch(x){b[k]=o+'d.write("'+p().replace(/"/g,String.fromCharCode(92)+'"')+'");d.close();'}a.P(2)};ld()};nt()})({loader: "static.olark.com/jsclient/loader0.js",name:"olark",methods:["configure","extend","declare","identify"]});
+/* custom configuration goes here (www.olark.com/documentation) */
+olark.identify('7397-817-10-8150');/*]]>{/literal}*/</script><noscript><a href="https://www.olark.com/site/7397-817-10-8150/contact" title="Contact us" target="_blank">Questions? Feedback?</a> powered by <a href="http://www.olark.com?welcome" title="Olark live chat software">Olark live chat software</a></noscript><!-- end olark code -->
+</body>
+</html>
