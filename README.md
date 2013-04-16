@@ -1,3 +1,3 @@
 ##helloworld-template
 
-A new repo
+The helloworld template that's available from the create app form.
